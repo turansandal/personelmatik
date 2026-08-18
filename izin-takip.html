@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Personelmatik · İzin Takip</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#1a1a2e;color:#eee;font-size:14px}
+.header{background:linear-gradient(135deg,#0f3460,#16213e);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.4);position:sticky;top:0;z-index:100}
+.header h1{font-size:15px;font-weight:700;color:#e94560;line-height:1.3}
+.header-sub{font-size:10px;color:#7ecbff;margin-top:1px}
+.btn{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.btn-primary{background:#e94560;color:#fff}.btn-primary:hover{background:#c73652}
+.btn-secondary{background:#0f3460;color:#7ecbff;border:1px solid #2a5fa5}.btn-secondary:hover{background:#1a4a7a}
+.btn-danger{background:#c0392b;color:#fff}.btn-success{background:#1db954;color:#fff}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:#16213e;border-radius:16px;padding:30px 26px;width:310px;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid #2a5fa5}
+.login-box h2{text-align:center;margin-bottom:4px;color:#7ecbff;font-size:18px}
+.login-box .sub{text-align:center;font-size:11px;color:#5a7fa5;margin-bottom:18px}
+.login-box input,.login-box select{width:100%;padding:10px 13px;border-radius:8px;border:1px solid #2a5fa5;background:#0f3460;color:#eee;font-size:14px;margin-bottom:10px;outline:none}
+.login-box input:focus,.login-box select:focus{border-color:#e94560}
+.login-status{font-size:12px;color:#7ecbff;text-align:center;margin-bottom:6px;min-height:16px}
+.login-error{color:#e94560!important}
+.login-divider{text-align:center;margin:10px 0;font-size:11px;color:#5a7fa5}
+.view-btn{width:100%;padding:9px;background:#0f3460;border:1px solid #2a5fa5;color:#7ecbff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.view-btn:hover{background:#1a3a5c}
+.tabs{display:flex;background:#16213e;border-bottom:2px solid #0f3460;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 14px;cursor:pointer;font-size:12px;font-weight:600;color:#7ecbff;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s}
+.tab.active{color:#e94560;border-bottom-color:#e94560}
+.tab:hover:not(.active){color:#eee;background:#0f3460}
+.panel{display:none;padding:13px}.panel.active{display:block}
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}
+.stat-card{background:#16213e;border-radius:10px;padding:10px 6px;text-align:center;border:1px solid #2a5fa5}
+.stat-card .num{font-size:20px;font-weight:700;color:#e94560}
+.stat-card .lbl{font-size:10px;color:#7ecbff;margin-top:2px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav span{font-size:14px;font-weight:700;color:#7ecbff}
+.cal-nav button{background:#0f3460;border:1px solid #2a5fa5;color:#7ecbff;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:16px}
+.calendar{border-radius:12px;overflow:hidden;border:1px solid #2a5fa5}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);background:#0f3460}
+.cal-header div{text-align:center;padding:7px 1px;font-size:10px;font-weight:700;color:#7ecbff}
+.cal-body{display:grid;grid-template-columns:repeat(7,1fr);background:#16213e}
+.cal-cell{min-height:58px;border:.5px solid #0f3460;padding:3px;cursor:pointer;transition:background .15s}
+.cal-cell:hover{background:#1a3a5c}
+.cal-cell.today{outline:2px solid #e94560;outline-offset:-1px}
+.cal-cell.other-month{opacity:.3}
+.cal-cell .day-num{font-size:10px;color:#7ecbff;font-weight:600}
+.cal-cell.weekend .day-num{color:#e9a840}
+.cal-cell .dots{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.search-bar{display:flex;gap:8px;margin-bottom:10px}
+.search-bar input{flex:1;padding:9px 11px;border-radius:8px;border:1px solid #2a5fa5;background:#0f3460;color:#eee;font-size:13px;outline:none}
+.search-bar select{padding:9px 7px;border-radius:8px;border:1px solid #2a5fa5;background:#0f3460;color:#eee;font-size:12px;outline:none}
+.emp-card{background:#16213e;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid #2a5fa5;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.emp-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.emp-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff}
+.emp-info{flex:1;min-width:0}
+.emp-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emp-meta{font-size:10px;color:#7ecbff;margin-top:2px}
+.emp-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.tag{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:500}
+.modal{background:#16213e;border-radius:18px 18px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;border-top:2px solid #e94560}
+.modal h3{font-size:16px;color:#e94560;margin-bottom:14px}
+.form-row{margin-bottom:11px}
+.form-row label{display:block;font-size:12px;color:#7ecbff;margin-bottom:4px;font-weight:600}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid #2a5fa5;background:#0f3460;color:#eee;font-size:13px;outline:none}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:#e94560}
+.form-row textarea{min-height:60px;resize:vertical}
+.form-actions{display:flex;gap:10px;margin-top:14px}
+.form-actions .btn{flex:1;padding:11px;font-size:13px}
+.izin-card{background:#16213e;border-radius:10px;padding:11px 13px;margin-bottom:8px;border-left:4px solid #ccc}
+.izin-card .ic-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.izin-card .ic-type{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.izin-card .ic-dates{font-size:11px;color:#7ecbff;margin-top:4px}
+.izin-card .ic-note{font-size:11px;color:#bbb;margin-top:3px;font-style:italic}
+.izin-card .ic-footer{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.izin-card .ic-by{font-size:10px;color:#5a7fa5}
+.admin-section{background:#16213e;border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid #2a5fa5}
+.admin-section h4{color:#7ecbff;font-size:13px;margin-bottom:11px;font-weight:700}
+.user-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #0f3460;font-size:12px;gap:8px}
+.user-row:last-child{border-bottom:none}
+.filter-row{display:flex;gap:8px;margin-bottom:11px;flex-wrap:wrap}
+.filter-row select{flex:1;min-width:100px;padding:8px 7px;border-radius:8px;border:1px solid #2a5fa5;background:#0f3460;color:#eee;font-size:12px;outline:none}
+.empty-state{text-align:center;color:#5a7fa5;padding:32px 0;font-size:13px}
+.section-title{font-size:13px;font-weight:700;color:#7ecbff;margin-bottom:10px}
+.vardiya-badge{display:inline-block;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700}
+.v1{background:#1a4a2e;color:#1db954}.v2{background:#3a2a0a;color:#e9a840}
+.hidden{display:none!important}
+.sync-indicator{position:fixed;bottom:12px;right:12px;background:#1db954;color:#fff;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;z-index:800;transition:opacity .5s;opacity:0;pointer-events:none}
+.sync-indicator.show{opacity:1}
+.day-detail-list{list-style:none}
+.day-detail-list li{padding:7px 0;border-bottom:1px solid #0f3460;font-size:12px;display:flex;gap:8px;align-items:flex-start}
+.day-detail-list li:last-child{border-bottom:none}
+.time-chip{font-size:10px;background:#0f3460;border-radius:5px;padding:2px 6px;color:#7ecbff;flex-shrink:0;margin-top:1px}
+@media(min-width:600px){.stats-bar{grid-template-columns:repeat(5,1fr)}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#16213e}::-webkit-scrollbar-thumb{background:#2a5fa5;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="sync-indicator" id="syncIndicator">✓ Kaydedildi</div>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🏭 Personelmatik</h2>
+    <p class="sub">Mavi Yaka İzin Takip Sistemi</p>
+    <div class="login-status" id="loginStatus">⏳ Bağlanıyor...</div>
+    <select id="loginUser"><option value="">-- Kullanıcı Seçin --</option></select>
+    <input type="password" id="loginPass" placeholder="Şifre" autocomplete="off">
+    <button class="btn btn-primary" style="width:100%;padding:11px;margin-bottom:8px" onclick="doLogin()">GİRİŞ YAP</button>
+    <div class="login-divider">veya</div>
+    <button class="view-btn" onclick="viewOnly()">🔍 Şifresiz Görüntüle</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div><h1>🏭 Personelmatik</h1><div class="header-sub">Mavi Yaka İzin Takip</div></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="sessionBadge" style="font-size:11px;background:#0f3460;border:1px solid #2a5fa5;padding:3px 9px;border-radius:10px;color:#7ecbff"></span>
+    <button class="btn btn-secondary btn-sm hidden" onclick="logout()" id="logoutBtn">Çıkış</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="takvim" onclick="switchTab('takvim')">📅 Takvim</div>
+  <div class="tab" data-tab="personel" onclick="switchTab('personel')">👷 Personel</div>
+  <div class="tab" data-tab="izinler" onclick="switchTab('izinler')">📋 İzinler</div>
+  <div class="tab hidden" data-tab="admin" onclick="switchTab('admin')" id="adminTab">⚙️ Yönetim</div>
+</div>
+
+<div class="panel active" id="panel-takvim">
+  <div class="stats-bar" id="statsBar"><div style="grid-column:1/-1;text-align:center;color:#7ecbff;padding:20px">Yükleniyor...</div></div>
+  <div class="legend" id="legend"></div>
+  <div class="cal-nav">
+    <button onclick="changeMonth(-1)">‹</button>
+    <span id="calTitle"></span>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="calendar">
+    <div class="cal-header">
+      <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div>
+      <div style="color:#e9a840">Cmt</div><div style="color:#e9a840">Paz</div>
+    </div>
+    <div class="cal-body" id="calBody"></div>
+  </div>
+  <p style="font-size:10px;color:#5a7fa5;margin-top:8px;text-align:center">Güne tıklayarak detay ve yeni kayıt ekleyebilirsiniz</p>
+</div>
+<div class="panel" id="panel-personel">
+  <div class="search-bar">
+    <input type="text" id="empSearch" placeholder="İsim ara..." oninput="renderEmployees()">
+    <select id="empFilter" onchange="renderEmployees()">
+      <option value="">Tümü</option><option value="kadro">Kadrolu</option>
+      <option value="gecici">Geçici</option><option value="formen">Formen</option>
+      <option value="vardiya1">Vardiya 1</option><option value="vardiya2">Vardiya 2</option>
+    </select>
+  </div>
+  <div id="empList"></div>
+</div>
+<div class="panel" id="panel-izinler">
+  <div class="filter-row">
+    <select id="filterTip" onchange="renderIzinler()">
+      <option value="">Tüm Tipler</option><option value="yillik">Yıllık İzin</option>
+      <option value="mazeret">Mazeret İzni</option><option value="istirahat">İstirahat</option>
+      <option value="vizite">Vizite</option><option value="idari">İdari İzin</option>
+      <option value="ucretsizyillik">Ücretsiz Yıllık</option>
+    </select>
+    <select id="filterVardiya" onchange="renderIzinler()">
+      <option value="">Tüm Vardiya</option><option value="1">Vardiya 1</option><option value="2">Vardiya 2</option>
+    </select>
+    <select id="filterAy" onchange="renderIzinler()"></select>
+  </div>
+  <div id="izinList"></div>
+</div>
+<div class="panel" id="panel-admin"><div id="adminContent"></div></div>
+
+<!-- MODALLER -->
+<div class="modal-overlay hidden" id="dayModal">
+  <div class="modal">
+    <h3 id="dayModalTitle"></h3>
+    <div id="dayModalContent"></div>
+    <div id="dayModalAddBtn"></div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:12px" onclick="closeModal('dayModal')">Kapat</button>
+  </div>
+</div>
+<div class="modal-overlay hidden" id="izinModal">
+  <div class="modal">
+    <h3 id="izinModalTitle">İzin Kaydı Ekle</h3>
+    <div class="form-row"><label>Personel</label><select id="fEmp"></select></div>
+    <div class="form-row"><label>İzin Tipi</label>
+      <select id="fTip">
+        <option value="yillik">Yıllık İzin</option><option value="mazeret">Mazeret İzni</option>
+        <option value="istirahat">İstirahat</option><option value="vizite">Vizite</option>
+        <option value="idari">İdari İzin</option><option value="ucretsizyillik">Ücretsiz Yıllık İzin</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Başlangıç Tarihi</label><input type="date" id="fBaslangic"></div>
+    <div class="form-row"><label>Bitiş Tarihi</label><input type="date" id="fBitis"></div>
+    <div class="form-row"><label>Vardiya</label>
+      <select id="fVardiya">
+        <option value="1">Vardiya 1 (Sabah)</option>
+        <option value="2">Vardiya 2 (Akşam/Gece)</option>
+        <option value="tam">Tam Gün (Her İki Vardiya)</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Saat (opsiyonel)</label><input type="time" id="fSaat"></div>
+    <div class="form-row"><label>Açıklama / Not</label><textarea id="fNot" placeholder="Opsiyonel..."></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('izinModal')">İptal</button>
+      <button class="btn btn-primary" id="saveIzinBtn" onclick="saveIzin()">Kaydet</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay hidden" id="empModal">
+  <div class="modal">
+    <h3 id="empModalTitle"></h3>
+    <div id="empModalContent"></div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:12px" onclick="closeModal('empModal')">Kapat</button>
+  </div>
+</div>
+<div class="modal-overlay hidden" id="userModal">
+  <div class="modal">
+    <h3 id="userModalTitle">Kullanıcı Ekle</h3>
+    <div class="form-row"><label>Ad Soyad</label><input type="text" id="uName"></div>
+    <div class="form-row"><label>Rol</label>
+      <select id="uRole"><option value="editor">Editör</option><option value="admin">Yönetici</option></select>
+    </div>
+    <div class="form-row"><label>Şifre</label><input type="password" id="uPass"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('userModal')">İptal</button>
+      <button class="btn btn-primary" onclick="saveUser()">Kaydet</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay hidden" id="newEmpModal">
+  <div class="modal">
+    <h3 id="newEmpModalTitle">Personel Ekle</h3>
+    <div class="form-row"><label>Ad Soyad</label><input type="text" id="neAd"></div>
+    <div class="form-row"><label>Sicil No (opsiyonel)</label><input type="text" id="neSicil"></div>
+    <div class="form-row"><label>Görev / Pozisyon</label><input type="text" id="neGorev" placeholder="Operatör, Formen..."></div>
+    <div class="form-row"><label>Statü</label>
+      <select id="neStatu"><option value="kadro">Kadrolu</option><option value="gecici">Geçici</option></select>
+    </div>
+    <div class="form-row"><label>Formen mi?</label>
+      <select id="neFormen"><option value="false">Hayır</option><option value="true">Evet</option></select>
+    </div>
+    <div class="form-row"><label>Vardiya</label>
+      <select id="neVardiya"><option value="1">Vardiya 1 (Sabah)</option><option value="2">Vardiya 2 (Akşam/Gece)</option></select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('newEmpModal')">İptal</button>
+      <button class="btn btn-primary" onclick="saveNewEmp()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase compat (global scope - module değil) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAXMHGLInITt_bX8wXCS5aDW_C4TDsV0xA",
+  authDomain: "personelmatik.firebaseapp.com",
+  databaseURL: "https://personelmatik-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "personelmatik",
+  storageBucket: "personelmatik.firebasestorage.app",
+  messagingSenderId: "57142908328",
+  appId: "1:57142908328:web:62245c2ed590f7d5acb99d"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+// ── SABİTLER ─────────────────────────────────────────────────────────────
+var IZIN_TYPES = {
+  yillik:        { label:'Yıllık İzin',          color:'#3498db' },
+  mazeret:       { label:'Mazeret İzni',          color:'#e67e22' },
+  istirahat:     { label:'İstirahat',             color:'#e74c3c' },
+  vizite:        { label:'Vizite',                color:'#9b59b6' },
+  idari:         { label:'İdari İzin',            color:'#1abc9c' },
+  ucretsizyillik:{ label:'Ücretsiz Yıllık İzin',  color:'#95a5a6' }
+};
+var PALET = ['#3498db','#e67e22','#2ecc71','#9b59b6','#1abc9c','#e74c3c','#f39c12','#16a085','#8e44ad','#d35400','#27ae60','#2980b9'];
+var GOREV_RENKLER = {};
+var gorevRenkIdx = 0;
+var MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+function getGorevRenk(gorev) {
+  if (!gorev) return '#7ecbff';
+  var k = gorev.trim().toLowerCase();
+  if (!GOREV_RENKLER[k]) { GOREV_RENKLER[k] = PALET[gorevRenkIdx++ % PALET.length]; }
+  return GOREV_RENKLER[k];
+}
+
+// ── GLOBAL STATE ─────────────────────────────────────────────────────────
+var currentUser   = null;
+var curMonth      = new Date().getMonth();
+var curYear       = new Date().getFullYear();
+var editingIzinId = null;
+var editingUserId = null;
+var editingEmpId  = null;
+var prefillDate   = null;
+var DB = { users:{}, emps:{}, izinler:{} };
+var dbReady = { users:false, emps:false, izinler:false };
+
+// ── FIREBASE LISTENERS ────────────────────────────────────────────────────
+function startListeners() {
+  db.ref('users').on('value', function(snap) {
+    DB.users = snap.val() || {};
+    dbReady.users = true;
+    onDataChange();
+    populateLoginUsers();
+  });
+  db.ref('emps').on('value', function(snap) {
+    DB.emps = snap.val() || {};
+    dbReady.emps = true;
+    onDataChange();
+  });
+  db.ref('izinler').on('value', function(snap) {
+    DB.izinler = snap.val() || {};
+    dbReady.izinler = true;
+    onDataChange();
+  });
+}
+
+function onDataChange() {
+  renderCalendar();
+  renderStats();
+  if (document.getElementById('panel-personel').classList.contains('active')) renderEmployees();
+  if (document.getElementById('panel-izinler').classList.contains('active')) renderIzinler();
+  if (document.getElementById('panel-admin').classList.contains('active')) renderAdmin();
+  populateFilterAy();
+}
+
+// ── YARDIMCILAR ───────────────────────────────────────────────────────────
+function genUid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function fmtDate(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtDateTR(s) {
+  if (!s) return '';
+  var p = s.split('-'); return p[2]+'.'+p[1]+'.'+p[0];
+}
+function showSync() {
+  var el = document.getElementById('syncIndicator');
+  el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 2000);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+function init() {
+  renderLegend();
+  document.getElementById('loginStatus').textContent = '⏳ Bağlanıyor...';
+
+  // Varsayılan admin yoksa oluştur
+  db.ref('users').once('value', function(snap) {
+    if (!snap.exists()) {
+      var id = genUid();
+      db.ref('users/'+id).set({ id:id, name:'Yönetici', role:'admin', pass:'1234' });
+    }
+    startListeners();
+    document.getElementById('loginStatus').textContent = '';
+  }, function(err) {
+    document.getElementById('loginStatus').textContent = '❌ Bağlantı hatası: ' + err.message;
+    document.getElementById('loginStatus').className = 'login-status login-error';
+  });
+
+  document.getElementById('loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  document.querySelectorAll('.modal-overlay').forEach(function(o){
+    o.addEventListener('click', function(e){ if(e.target===o) o.classList.add('hidden'); });
+  });
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────
+function populateLoginUsers() {
+  var sel = document.getElementById('loginUser');
+  var prev = sel.value;
+  sel.innerHTML = '<option value="">-- Kullanıcı Seçin --</option>';
+  Object.values(DB.users).forEach(function(u) {
+    sel.innerHTML += '<option value="'+u.id+'">'+u.name+'</option>';
+  });
+  if (prev) sel.value = prev;
+  if (Object.keys(DB.users).length > 0) {
+    document.getElementById('loginStatus').textContent = '';
+  }
+}
+
+function doLogin() {
+  var uid2 = document.getElementById('loginUser').value;
+  var pass  = document.getElementById('loginPass').value.trim();
+  var st    = document.getElementById('loginStatus');
+  if (!uid2) { st.textContent='Kullanıcı seçin.'; st.className='login-status login-error'; return; }
+  if (!pass)  { st.textContent='Şifre girin.';    st.className='login-status login-error'; return; }
+  var user = Object.values(DB.users).find(function(u){ return u.id===uid2; });
+  if (!user || user.pass!==pass) { st.textContent='Şifre hatalı!'; st.className='login-status login-error'; return; }
+  currentUser = user;
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('sessionBadge').textContent = user.name+' ('+(user.role==='admin'?'Yönetici':'Editör')+')';
+  document.getElementById('logoutBtn').classList.remove('hidden');
+  if (user.role==='admin') document.getElementById('adminTab').classList.remove('hidden');
+  onDataChange();
+}
+
+function viewOnly() {
+  currentUser = null;
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('sessionBadge').textContent = '👁 Görüntüleme';
+  document.getElementById('logoutBtn').classList.remove('hidden');
+  document.getElementById('adminTab').classList.add('hidden');
+  onDataChange();
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('adminTab').classList.add('hidden');
+  document.getElementById('logoutBtn').classList.add('hidden');
+  document.getElementById('sessionBadge').textContent = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginStatus').textContent = '';
+  document.getElementById('loginStatus').className = 'login-status';
+  populateLoginUsers();
+}
+
+function canEdit() { return currentUser && (currentUser.role==='admin'||currentUser.role==='editor'); }
+function isAdmin() { return currentUser && currentUser.role==='admin'; }
+
+// ── TABS ─────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if (tab==='personel') renderEmployees();
+  if (tab==='izinler')  renderIzinler();
+  if (tab==='admin')    renderAdmin();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────
+function renderStats() {
+  var todayStr = fmtDate(new Date());
+  var izArr    = Object.values(DB.izinler);
+  var empArr   = Object.values(DB.emps);
+  var bugun    = izArr.filter(function(iz){ return iz.baslangic<=todayStr&&iz.bitis>=todayStr; }).length;
+  var buAy     = izArr.filter(function(iz){ return iz.baslangic.startsWith(curYear+'-'+String(curMonth+1).padStart(2,'0')); }).length;
+  document.getElementById('statsBar').innerHTML =
+    '<div class="stat-card"><div class="num">'+empArr.length+'</div><div class="lbl">Personel</div></div>'+
+    '<div class="stat-card"><div class="num">'+bugun+'</div><div class="lbl">Bugün İzinli</div></div>'+
+    '<div class="stat-card"><div class="num">'+buAy+'</div><div class="lbl">Bu Ay Kayıt</div></div>'+
+    '<div class="stat-card"><div class="num">'+empArr.filter(function(e){return e.vardiya==='1';}).length+'</div><div class="lbl">Vardiya 1</div></div>'+
+    '<div class="stat-card"><div class="num">'+empArr.filter(function(e){return e.vardiya==='2';}).length+'</div><div class="lbl">Vardiya 2</div></div>';
+}
+
+// ── LEGEND ────────────────────────────────────────────────────────────────
+function renderLegend() {
+  document.getElementById('legend').innerHTML = Object.entries(IZIN_TYPES).map(function(kv){
+    return '<div class="legend-item"><div class="legend-dot" style="background:'+kv[1].color+'"></div>'+kv[1].label+'</div>';
+  }).join('');
+}
+
+// ── TAKVİM ────────────────────────────────────────────────────────────────
+function changeMonth(dir) {
+  curMonth += dir;
+  if (curMonth>11){curMonth=0;curYear++;}
+  if (curMonth<0) {curMonth=11;curYear--;}
+  renderCalendar(); renderStats(); populateFilterAy();
+}
+
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = MONTHS_TR[curMonth]+' '+curYear;
+  var izArr    = Object.values(DB.izinler);
+  var today    = fmtDate(new Date());
+  var first    = new Date(curYear, curMonth, 1);
+  var startDay = first.getDay(); startDay = startDay===0?6:startDay-1;
+  var daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
+  var prevDays    = new Date(curYear, curMonth, 0).getDate();
+  var cells = '';
+  for (var i=startDay-1;i>=0;i--) {
+    var d=prevDays-i;
+    var m2=curMonth-1<0?11:curMonth-1;
+    var y2=curMonth-1<0?curYear-1:curYear;
+    var ds=y2+'-'+String(m2+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    cells+='<div class="cal-cell other-month" onclick="openDayModal(\''+ds+'\')"><div class="day-num">'+d+'</div></div>';
+  }
+  for (var d=1;d<=daysInMonth;d++) {
+    var ds=curYear+'-'+String(curMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var dow=new Date(curYear,curMonth,d).getDay();
+    var isWe=dow===0||dow===6;
+    var isToday=ds===today;
+    var dayIz=izArr.filter(function(iz){return iz.baslangic<=ds&&iz.bitis>=ds;});
+    var dots=dayIz.map(function(iz){return '<div class="dot" style="background:'+(IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].color:'#ccc')+'"></div>';}).join('');
+    cells+='<div class="cal-cell'+(isWe?' weekend':'')+(isToday?' today':'')+'" onclick="openDayModal(\''+ds+'\')">'+'<div class="day-num">'+d+'</div><div class="dots">'+dots+'</div></div>';
+  }
+  var rem=(startDay+daysInMonth)%7===0?0:7-(startDay+daysInMonth)%7;
+  for (var d=1;d<=rem;d++) cells+='<div class="cal-cell other-month"><div class="day-num">'+d+'</div></div>';
+  document.getElementById('calBody').innerHTML = cells;
+}
+
+// ── GÜN MODAL ─────────────────────────────────────────────────────────────
+function openDayModal(ds) {
+  if (!ds) return;
+  prefillDate = ds;
+  var parts = ds.split('-');
+  document.getElementById('dayModalTitle').textContent = '📅 '+parts[2]+' '+MONTHS_TR[parseInt(parts[1])-1]+' '+parts[0];
+  var izArr = Object.values(DB.izinler).filter(function(iz){return iz.baslangic<=ds&&iz.bitis>=ds;});
+  izArr.sort(function(a,b){ return (a.saat||'99:99').localeCompare(b.saat||'99:99'); });
+  var html = '';
+  if (!izArr.length) {
+    html = '<p class="empty-state">Bu gün için kayıt yok.</p>';
+  } else {
+    html = '<p style="font-size:11px;color:#5a7fa5;margin-bottom:8px">'+izArr.length+' kayıt · saate göre sıralı</p><ul class="day-detail-list">';
+    izArr.forEach(function(iz){
+      var c=(IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].color:'#ccc');
+      var lbl=(IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].label:iz.tip);
+      var vText=iz.vardiya==='tam'?'Tam Gün':'Vardiya '+iz.vardiya;
+      html+='<li>'+(iz.saat?'<span class="time-chip">⏰'+iz.saat+'</span>':'<span class="time-chip" style="opacity:.3">--:--</span>')+
+        '<div style="flex:1"><div style="font-weight:700;font-size:12px">'+iz.empName+'</div>'+
+        '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">'+
+        '<span style="padding:1px 7px;border-radius:7px;background:'+c+'22;color:'+c+';font-size:10px;font-weight:700">'+lbl+'</span>'+
+        '<span class="vardiya-badge '+(iz.vardiya==='2'?'v2':'v1')+'">'+vText+'</span></div>'+
+        (iz.not?'<div style="font-size:10px;color:#bbb;margin-top:2px;font-style:italic">'+iz.not+'</div>':'')+
+        '<div style="font-size:9px;color:#5a7fa5;margin-top:2px">Giren: '+(iz.giren||'-')+' '+(iz.girisZaman?iz.girisZaman.slice(0,16).replace('T',' '):'')+'</div>'+
+        '</div>'+(canEdit()?'<button class="btn btn-danger btn-sm" onclick="deleteIzin(\''+iz.id+'\',\''+ds+'\')">Sil</button>':'')+
+        '</li>';
+    });
+    html += '</ul>';
+  }
+  document.getElementById('dayModalContent').innerHTML = html;
+  document.getElementById('dayModalAddBtn').innerHTML = canEdit()
+    ? '<button class="btn btn-primary" style="width:100%;margin-top:12px;padding:10px" onclick="openIzinModal(null,\''+ds+'\')">+ Bu Güne İzin Ekle</button>'
+    : '';
+  document.getElementById('dayModal').classList.remove('hidden');
+}
+
+// ── İZİN KAYDET ───────────────────────────────────────────────────────────
+function openIzinModal(id, pDate) {
+  closeModal('dayModal');
+  editingIzinId = id || null;
+  document.getElementById('izinModalTitle').textContent = id ? 'İzin Kaydı Düzenle' : 'İzin Kaydı Ekle';
+  var empSel = document.getElementById('fEmp');
+  empSel.innerHTML = '<option value="">-- Personel Seçin --</option>';
+  Object.values(DB.emps).sort(function(a,b){return a.name.localeCompare(b.name,'tr');}).forEach(function(e){
+    empSel.innerHTML += '<option value="'+e.id+'">'+e.name+' (V'+e.vardiya+')</option>';
+  });
+  if (id && DB.izinler[id]) {
+    var iz = DB.izinler[id];
+    document.getElementById('fEmp').value       = iz.empId;
+    document.getElementById('fTip').value       = iz.tip;
+    document.getElementById('fBaslangic').value = iz.baslangic;
+    document.getElementById('fBitis').value     = iz.bitis;
+    document.getElementById('fVardiya').value   = iz.vardiya;
+    document.getElementById('fSaat').value      = iz.saat||'';
+    document.getElementById('fNot').value       = iz.not||'';
+  } else {
+    var pd = pDate || prefillDate || fmtDate(new Date());
+    document.getElementById('fEmp').value       = '';
+    document.getElementById('fTip').value       = 'yillik';
+    document.getElementById('fBaslangic').value = pd;
+    document.getElementById('fBitis').value     = pd;
+    document.getElementById('fVardiya').value   = '1';
+    document.getElementById('fSaat').value      = '';
+    document.getElementById('fNot').value       = '';
+  }
+  document.getElementById('izinModal').classList.remove('hidden');
+}
+
+function saveIzin() {
+  var empId = document.getElementById('fEmp').value;
+  var tip   = document.getElementById('fTip').value;
+  var bas   = document.getElementById('fBaslangic').value;
+  var bit   = document.getElementById('fBitis').value;
+  var vard  = document.getElementById('fVardiya').value;
+  var saat  = document.getElementById('fSaat').value.trim();
+  var not   = document.getElementById('fNot').value.trim();
+  if (!empId) { alert('Personel seçin.'); return; }
+  if (!bas||!bit) { alert('Tarih girin.'); return; }
+  if (bas>bit) { alert('Başlangıç tarihi bitiş tarihinden sonra olamaz.'); return; }
+  var emp = DB.emps[empId];
+  if (!emp) { alert('Personel bulunamadı.'); return; }
+  var btn = document.getElementById('saveIzinBtn');
+  btn.disabled = true; btn.textContent = 'Kaydediliyor...';
+  var now = new Date().toISOString();
+  var id  = editingIzinId || genUid();
+  var data = { id:id, empId:empId, empName:emp.name, tip:tip, baslangic:bas, bitis:bit,
+    vardiya:vard, saat:saat, not:not,
+    giren: editingIzinId ? (DB.izinler[id]&&DB.izinler[id].giren||currentUser&&currentUser.name||'?') : (currentUser&&currentUser.name||'?'),
+    girisZaman: editingIzinId ? (DB.izinler[id]&&DB.izinler[id].girisZaman||now) : now,
+    guncelleyen: currentUser&&currentUser.name||'?', guncellemeZaman:now };
+  db.ref('izinler/'+id).set(data, function(err) {
+    btn.disabled = false; btn.textContent = 'Kaydet';
+    if (err) { alert('Kayıt hatası: '+err.message); return; }
+    showSync();
+    closeModal('izinModal');
+    if (bas) openDayModal(bas);
+  });
+}
+
+function deleteIzin(id, ds) {
+  if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
+  db.ref('izinler/'+id).remove(function(err){
+    if (err) { alert('Silme hatası: '+err.message); return; }
+    showSync();
+    if (ds) openDayModal(ds);
+  });
+}
+
+// ── PERSONEL ──────────────────────────────────────────────────────────────
+function renderEmployees() {
+  var q    = (document.getElementById('empSearch')&&document.getElementById('empSearch').value||'').toLowerCase();
+  var filt = document.getElementById('empFilter')&&document.getElementById('empFilter').value||'';
+  var emps = Object.values(DB.emps);
+  if (q)               emps=emps.filter(function(e){return e.name.toLowerCase().includes(q);});
+  if (filt==='kadro')  emps=emps.filter(function(e){return e.statu==='kadro';});
+  if (filt==='gecici') emps=emps.filter(function(e){return e.statu==='gecici';});
+  if (filt==='formen') emps=emps.filter(function(e){return e.isFormen;});
+  if (filt==='vardiya1')emps=emps.filter(function(e){return e.vardiya==='1';});
+  if (filt==='vardiya2')emps=emps.filter(function(e){return e.vardiya==='2';});
+  var todayStr = fmtDate(new Date());
+  var izArr    = Object.values(DB.izinler);
+  var el = document.getElementById('empList'); if (!el) return;
+  if (!emps.length){el.innerHTML='<div class="empty-state">Personel bulunamadı.</div>';return;}
+  el.innerHTML = emps.sort(function(a,b){return a.name.localeCompare(b.name,'tr');}).map(function(e){
+    var rk  = getGorevRenk(e.gorev);
+    var ini = e.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+    var bugunIz = izArr.some(function(iz){return iz.empId===e.id&&iz.baslangic<=todayStr&&iz.bitis>=todayStr;});
+    var total   = izArr.filter(function(iz){return iz.empId===e.id;}).length;
+    return '<div class="emp-card" onclick="openEmpModal(\''+e.id+'\')">'+
+      '<div class="emp-left"><div class="emp-avatar" style="background:'+rk+'">'+ini+'</div>'+
+      '<div class="emp-info"><div class="emp-name">'+e.name+'</div>'+
+      '<div class="emp-meta">'+(e.gorev||'—')+' · '+(e.statu==='kadro'?'Kadrolu':'Geçici')+' · Vardiya '+e.vardiya+'</div>'+
+      '<div class="emp-badges">'+
+      (e.isFormen?'<span class="tag" style="background:#2c3e50;color:#f39c12">⭐ Formen</span>':'')+
+      (bugunIz?'<span class="tag" style="background:#e74c3c22;color:#e74c3c">● Bugün İzinli</span>':'')+
+      (total?'<span class="tag" style="background:#3498db22;color:#3498db">'+total+' kayıt</span>':'')+
+      '</div></div></div><div style="font-size:20px;color:#2a5fa5">›</div></div>';
+  }).join('');
+}
+
+function openEmpModal(empId) {
+  var emp = DB.emps[empId]; if (!emp) return;
+  var izArr = Object.values(DB.izinler).filter(function(iz){return iz.empId===empId;});
+  var rk  = getGorevRenk(emp.gorev);
+  var ini = emp.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+  document.getElementById('empModalTitle').textContent = emp.name;
+  var summary = {};
+  izArr.forEach(function(iz){summary[iz.tip]=(summary[iz.tip]||0)+1;});
+  var sumHtml = Object.entries(summary).map(function(kv){
+    var t=IZIN_TYPES[kv[0]]; return '<span style="padding:2px 8px;border-radius:8px;background:'+(t?t.color:'#555')+'22;color:'+(t?t.color:'#ccc')+';font-size:11px;font-weight:700">'+(t?t.label:kv[0])+': '+kv[1]+'</span>';
+  }).join(' ');
+  var recent = izArr.slice().sort(function(a,b){return b.baslangic.localeCompare(a.baslangic);}).slice(0,8);
+  var listHtml = recent.length ? recent.map(function(iz){
+    var c=IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].color:'#ccc';
+    var lbl=IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].label:iz.tip;
+    return '<div class="izin-card" style="border-left-color:'+c+'">'+
+      '<div class="ic-header"><span class="ic-type" style="color:'+c+';background:'+c+'22">'+lbl+'</span>'+
+      '<span class="vardiya-badge '+(iz.vardiya==='2'?'v2':'v1')+'">'+(iz.vardiya==='tam'?'Tam':'V'+iz.vardiya)+'</span></div>'+
+      '<div class="ic-dates">📅 '+fmtDateTR(iz.baslangic)+(iz.baslangic!==iz.bitis?' → '+fmtDateTR(iz.bitis):'')+(iz.saat?' ⏰'+iz.saat:'')+'</div>'+
+      (iz.not?'<div class="ic-note">'+iz.not+'</div>':'')+
+      '<div class="ic-by">Giren: '+(iz.giren||'-')+' '+(iz.girisZaman?iz.girisZaman.slice(0,16).replace('T',' '):'')+'</div></div>';
+  }).join('') : '<p class="empty-state" style="padding:14px 0">Kayıt yok.</p>';
+  document.getElementById('empModalContent').innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'+
+    '<div class="emp-avatar" style="background:'+rk+';width:44px;height:44px;font-size:16px">'+ini+'</div>'+
+    '<div><div style="font-weight:700">'+(emp.gorev||'—')+'</div>'+
+    '<div style="font-size:11px;color:#7ecbff">'+(emp.statu==='kadro'?'Kadrolu':'Geçici')+' · Vardiya '+emp.vardiya+(emp.isFormen?' · ⭐ Formen':'')+(emp.sicil?' · Sicil: '+emp.sicil:'')+'</div></div></div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+(sumHtml||'<span style="font-size:12px;color:#5a7fa5">İzin kaydı yok</span>')+'</div>'+
+    '<div class="section-title">Son Kayıtlar</div>'+listHtml+
+    (canEdit()?'<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="closeModal(\'empModal\');openIzinModal(null,null);setTimeout(function(){document.getElementById(\'fEmp\').value=\''+empId+'\'},100)">+ İzin Ekle</button>':'')+
+    (isAdmin()?'<button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="closeModal(\'empModal\');openEditEmpModal(\''+empId+'\')">✏️ Personel Bilgisini Düzenle</button>':'');
+  document.getElementById('empModal').classList.remove('hidden');
+}
+
+// ── İZİN LİSTESİ ──────────────────────────────────────────────────────────
+function populateFilterAy() {
+  var sel = document.getElementById('filterAy'); if (!sel) return;
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">Tüm Aylar</option>';
+  for (var m=0;m<12;m++) {
+    var val = curYear+'-'+String(m+1).padStart(2,'0');
+    sel.innerHTML += '<option value="'+val+'">'+MONTHS_TR[m]+' '+curYear+'</option>';
+  }
+  sel.value = cur || (curYear+'-'+String(curMonth+1).padStart(2,'0'));
+}
+
+function renderIzinler() {
+  var tip  = document.getElementById('filterTip')&&document.getElementById('filterTip').value||'';
+  var vard = document.getElementById('filterVardiya')&&document.getElementById('filterVardiya').value||'';
+  var ay   = document.getElementById('filterAy')&&document.getElementById('filterAy').value||'';
+  var arr  = Object.values(DB.izinler);
+  if (tip)  arr=arr.filter(function(iz){return iz.tip===tip;});
+  if (vard) arr=arr.filter(function(iz){return iz.vardiya===vard||iz.vardiya==='tam';});
+  if (ay)   arr=arr.filter(function(iz){return iz.baslangic.startsWith(ay);});
+  arr.sort(function(a,b){
+    if (a.baslangic!==b.baslangic) return b.baslangic.localeCompare(a.baslangic);
+    return (a.saat||'99:99').localeCompare(b.saat||'99:99');
+  });
+  var el = document.getElementById('izinList'); if (!el) return;
+  if (!arr.length){el.innerHTML='<div class="empty-state">Kayıt bulunamadı.</div>';return;}
+  el.innerHTML = '<div style="font-size:11px;color:#5a7fa5;margin-bottom:8px">'+arr.length+' kayıt</div>'+
+  arr.map(function(iz){
+    var c=IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].color:'#ccc';
+    var lbl=IZIN_TYPES[iz.tip]?IZIN_TYPES[iz.tip].label:iz.tip;
+    var vText=iz.vardiya==='tam'?'Tam Gün':'V'+iz.vardiya;
+    return '<div class="izin-card" style="border-left-color:'+c+'">'+
+      '<div class="ic-header"><div><div style="font-weight:700;font-size:13px">'+iz.empName+'</div>'+
+      '<span class="ic-type" style="color:'+c+';background:'+c+'22">'+lbl+'</span></div>'+
+      '<span class="vardiya-badge '+(iz.vardiya==='2'?'v2':'v1')+'">'+vText+'</span></div>'+
+      '<div class="ic-dates">📅 '+fmtDateTR(iz.baslangic)+(iz.baslangic!==iz.bitis?' → '+fmtDateTR(iz.bitis):'')+(iz.saat?' ⏰'+iz.saat:'')+'</div>'+
+      (iz.not?'<div class="ic-note">'+iz.not+'</div>':'')+
+      '<div class="ic-footer"><div class="ic-by">Giren: '+(iz.giren||'-')+' '+(iz.girisZaman?iz.girisZaman.slice(0,16).replace('T',' '):'')+'</div>'+
+      (canEdit()?'<button class="btn btn-danger btn-sm" onclick="deleteIzinList(\''+iz.id+'\')">Sil</button>':'')+
+      '</div></div>';
+  }).join('');
+}
+
+function deleteIzinList(id) {
+  if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
+  db.ref('izinler/'+id).remove(function(err){ if(!err) showSync(); });
+}
+
+// ── YÖNETİM ───────────────────────────────────────────────────────────────
+function renderAdmin() {
+  if (!isAdmin()){document.getElementById('adminContent').innerHTML='<div class="empty-state">Yetkisiz erişim.</div>';return;}
+  var users=Object.values(DB.users);
+  var emps=Object.values(DB.emps);
+  document.getElementById('adminContent').innerHTML=
+    '<div class="admin-section"><h4>👥 Sistem Kullanıcıları</h4>'+
+    users.map(function(u){
+      return '<div class="user-row"><div><div style="font-weight:700">'+u.name+'</div>'+
+        '<div style="color:#5a7fa5;font-size:10px">'+(u.role==='admin'?'Yönetici':'Editör')+'</div></div>'+
+        '<div>'+(u.id!==currentUser.id?'<button class="btn btn-danger btn-sm" onclick="deleteUser(\''+u.id+'\')">Sil</button>':'<span style="font-size:10px;color:#1db954">● Aktif</span>')+'</div></div>';
+    }).join('')+
+    '<button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="openUserModal()">+ Yeni Kullanıcı</button></div>'+
+
+    '<div class="admin-section"><h4>👷 Personel Listesi ('+emps.length+')</h4>'+
+    '<div style="font-size:11px;color:#7ecbff;margin-bottom:10px">Kadrolu: '+emps.filter(function(e){return e.statu==='kadro';}).length+
+    ' · Geçici: '+emps.filter(function(e){return e.statu==='gecici';}).length+
+    ' · Formen: '+emps.filter(function(e){return e.isFormen;}).length+'</div>'+
+    '<button class="btn btn-success btn-sm" style="width:100%;margin-bottom:10px" onclick="openNewEmpModal()">+ Yeni Personel Ekle</button>'+
+    emps.sort(function(a,b){return a.name.localeCompare(b.name,'tr');}).map(function(e){
+      return '<div class="user-row"><div style="flex:1;min-width:0">'+
+        '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e.name+'</div>'+
+        '<div style="color:#7ecbff;font-size:10px">'+(e.gorev||'—')+' · '+(e.statu==='kadro'?'Kadrolu':'Geçici')+' · V'+e.vardiya+(e.isFormen?' · ⭐':'')+'</div></div>'+
+        '<div style="display:flex;gap:5px;flex-shrink:0">'+
+        '<button class="btn btn-secondary btn-sm" onclick="openEditEmpModal(\''+e.id+'\')">Düzenle</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="deleteEmp(\''+e.id+'\')">Sil</button></div></div>';
+    }).join('')+'</div>'+
+
+    '<div class="admin-section"><h4>💾 Veri Yönetimi</h4>'+
+    '<div style="display:flex;flex-direction:column;gap:8px">'+
+    '<button class="btn btn-secondary" onclick="exportData()">📤 Verileri Dışa Aktar (JSON)</button>'+
+    '<button class="btn btn-secondary" onclick="document.getElementById(\'importFile\').click()">📥 Verileri İçe Aktar (JSON)</button>'+
+    '<input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">'+
+    '<button class="btn btn-danger" onclick="clearAllIzinler()" style="margin-top:4px">🗑️ Tüm İzin Kayıtlarını Sil</button>'+
+    '</div></div>';
+}
+
+function openUserModal(id) {
+  editingUserId = id||null;
+  document.getElementById('userModalTitle').textContent = id?'Kullanıcı Düzenle':'Yeni Kullanıcı Ekle';
+  var u = id&&DB.users[id]||null;
+  document.getElementById('uName').value = u&&u.name||'';
+  document.getElementById('uRole').value = u&&u.role||'editor';
+  document.getElementById('uPass').value = u&&u.pass||'';
+  document.getElementById('userModal').classList.remove('hidden');
+}
+
+function saveUser() {
+  var name=document.getElementById('uName').value.trim();
+  var role=document.getElementById('uRole').value;
+  var pass=document.getElementById('uPass').value.trim();
+  if (!name){alert('Ad girin.');return;}
+  if (!pass){alert('Şifre girin.');return;}
+  var id=editingUserId||genUid();
+  db.ref('users/'+id).set({id:id,name:name,role:role,pass:pass},function(err){
+    if(err){alert('Hata: '+err.message);return;}
+    showSync(); closeModal('userModal'); renderAdmin();
+  });
+}
+
+function deleteUser(id) {
+  if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+  db.ref('users/'+id).remove(function(err){if(!err){showSync();renderAdmin();}});
+}
+
+function openNewEmpModal(id) {
+  editingEmpId = id||null;
+  document.getElementById('newEmpModalTitle').textContent = id?'Personel Düzenle':'Yeni Personel Ekle';
+  var e = id&&DB.emps[id]||null;
+  document.getElementById('neAd').value      = e&&e.name||'';
+  document.getElementById('neSicil').value   = e&&e.sicil||'';
+  document.getElementById('neGorev').value   = e&&e.gorev||'';
+  document.getElementById('neStatu').value   = e&&e.statu||'kadro';
+  document.getElementById('neFormen').value  = e&&e.isFormen?'true':'false';
+  document.getElementById('neVardiya').value = e&&e.vardiya||'1';
+  document.getElementById('newEmpModal').classList.remove('hidden');
+}
+
+function openEditEmpModal(id) { closeModal('empModal'); openNewEmpModal(id); }
+
+function saveNewEmp() {
+  var name    = document.getElementById('neAd').value.trim();
+  var sicil   = document.getElementById('neSicil').value.trim();
+  var gorev   = document.getElementById('neGorev').value.trim();
+  var statu   = document.getElementById('neStatu').value;
+  var isFormen= document.getElementById('neFormen').value==='true';
+  var vardiya = document.getElementById('neVardiya').value;
+  if (!name){alert('Ad Soyad girin.');return;}
+  var id = editingEmpId||genUid();
+  db.ref('emps/'+id).set({id:id,name:name,sicil:sicil,gorev:gorev,statu:statu,isFormen:isFormen,vardiya:vardiya},function(err){
+    if(err){alert('Hata: '+err.message);return;}
+    showSync(); closeModal('newEmpModal'); renderAdmin();
+  });
+}
+
+function deleteEmp(id) {
+  if (!confirm('Bu personeli silmek istediğinizden emin misiniz?')) return;
+  db.ref('emps/'+id).remove(function(err){if(!err){showSync();renderAdmin();}});
+}
+
+function exportData() {
+  var data={users:DB.users,emps:DB.emps,izinler:DB.izinler,exportDate:new Date().toISOString()};
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='personelmatik-yedek-'+fmtDate(new Date())+'.json';
+  a.click();
+}
+
+function importData(event) {
+  var file=event.target.files[0]; if (!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try {
+      var data=JSON.parse(e.target.result);
+      if (!confirm('Mevcut veriler YERİNE geçecek. Onaylıyor musunuz?')) return;
+      var updates={};
+      if(data.users)   updates['users']=data.users;
+      if(data.emps)    updates['emps']=data.emps;
+      if(data.izinler) updates['izinler']=data.izinler;
+      db.ref().update(updates,function(err){if(!err){showSync();alert('Veriler içe aktarıldı.');}});
+    } catch(err){alert('Geçersiz dosya!');}
+  };
+  reader.readAsText(file);
+}
+
+function clearAllIzinler() {
+  if (!confirm('Tüm izin kayıtları silinecek. Bu işlem geri alınamaz!')) return;
+  db.ref('izinler').remove(function(err){if(!err) showSync();});
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// BAŞLAT
+init();
+</script>
+</body>
+</html>
